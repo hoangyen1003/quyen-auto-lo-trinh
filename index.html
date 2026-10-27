@@ -1,0 +1,406 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lộ trình website Quyen Auto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: swimlane sheet — three party lanes (màu theo sheet timeline: DGM cam, GTV xanh navy, QA đỏ), time rail on the left */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --fg: #19212c;
+  --muted: #5d6878;
+  --rule: #d9dee6;
+  --lane: #ffffff;
+  --lane-alt: #eceff4;
+  --rail: #e3e7ee;
+  --dgm: #df7a0a;
+  --gtv: #1f3c88;
+  --qa: #c9302c;
+  --on-node: #ffffff;
+  --rework: #8a94a3;
+  --warn-bg: #fff4e3;
+  --warn-fg: #7a4300;
+  --font-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --surface: #19202a; --fg: #e5e9ef; --muted: #9aa5b4; --rule: #2c3542;
+    --lane: #161c24; --lane-alt: #1d2530; --rail: #232c38;
+    --dgm: #c96d0b; --gtv: #3a5fc4; --qa: #c23c38; --on-node: #ffffff; --rework: #7d8898;
+    --warn-bg: #2e2312; --warn-fg: #f3c27e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --surface: #19202a; --fg: #e5e9ef; --muted: #9aa5b4; --rule: #2c3542;
+  --lane: #161c24; --lane-alt: #1d2530; --rail: #232c38;
+  --dgm: #c96d0b; --gtv: #3a5fc4; --qa: #c23c38; --on-node: #ffffff; --rework: #7d8898;
+  --warn-bg: #2e2312; --warn-fg: #f3c27e;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 6px 0 8px; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 20px; margin: 0 0 14px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 62ch; margin: 0; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* proportional timeline bar */
+.bar { display: flex; border-radius: 6px; overflow: hidden; margin-top: 22px; }
+.bar > div { padding: 10px 12px; color: var(--on-node); min-width: 0; }
+.bar b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar span { font-family: var(--font-mono); font-size: 12px; opacity: .9; white-space: nowrap; }
+.p1 { flex: 35; background: var(--gtv); }
+.p2 { flex: 10; background: var(--dgm); }
+.p3 { flex: 5; background: var(--qa); }
+.ticks { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+.ticks .mid1 { margin-left: auto; margin-right: calc(30% - 2.5em); }
+.p3 b { white-space: normal; text-wrap: balance; }
+.launch { display: flex; justify-content: flex-end; margin-top: 12px; }
+.launch-pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 6px; border: 1.5px solid var(--qa); background: var(--surface); font-size: 14px; font-weight: 600; }
+.launch-dia { width: 10px; height: 10px; background: var(--qa); transform: rotate(45deg); flex: none; }
+.launch-date { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--qa); margin-right: 6px; }
+
+/* diagram */
+figure { margin: 0; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+svg.flow { display: block; width: 100%; min-width: 760px; height: auto; color: var(--fg); font-family: var(--font-body); }
+.lane { fill: var(--lane); }
+.lane-alt { fill: var(--lane-alt); }
+.rail { fill: var(--rail); }
+.divider { stroke: var(--rule); stroke-width: 1; }
+.divider.soft { stroke-dasharray: 3 4; }
+.hd-name { font-size: 16px; font-weight: 700; }
+.hd-sub { font-size: 11.5px; fill: var(--muted); }
+.c-dgm { fill: var(--dgm); } .c-gtv { fill: var(--gtv); } .c-qa { fill: var(--qa); }
+.s-dgm { stroke: var(--dgm); } .s-gtv { stroke: var(--gtv); } .s-qa { stroke: var(--qa); }
+.dia { fill: var(--surface); stroke-width: 2; }
+.t-node { fill: var(--on-node); font-size: 13px; font-weight: 600; text-anchor: middle; }
+.t-node2 { fill: var(--on-node); font-size: 11.5px; text-anchor: middle; opacity: .92; }
+.t-dia { fill: var(--fg); font-size: 12.5px; font-weight: 600; text-anchor: middle; }
+.t-dia2 { fill: var(--muted); font-size: 11.5px; text-anchor: middle; }
+.edge { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.edge.back { stroke: var(--rework); stroke-dasharray: 5 4; }
+.ah { fill: currentColor; }
+.ah-back { fill: var(--rework); }
+.lbl { fill: var(--fg); font-size: 11.5px; font-weight: 500; text-anchor: middle; }
+.lbl.back { fill: var(--muted); }
+.r-gd { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); letter-spacing: .06em; }
+.r-name { font-size: 13px; font-weight: 700; fill: var(--fg); }
+.r-date { font-family: var(--font-mono); font-size: 12px; fill: var(--fg); }
+.r-note { font-size: 11px; fill: var(--muted); }
+.ms { fill: var(--fg); }
+.r-ms { font-size: 11.5px; font-weight: 600; fill: var(--fg); }
+figcaption { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+figcaption .key { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 26px; height: 0; border-top: 2px solid var(--fg); display: inline-block; }
+.sw.back { border-top: 2px dashed var(--rework); }
+.chip { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* scope cards */
+.scope { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 18px 8px; border-top: 4px solid var(--c); min-width: 0; }
+.card h3 { margin: 0; font-size: 17px; color: var(--c); }
+.card .role { font-size: 13px; color: var(--muted); margin: 2px 0 10px; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.card li::marker { color: var(--c); }
+.card .when { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.card .done { font-size: 12px; font-weight: 600; color: var(--c); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; background: var(--lane-alt); }
+tr:last-child td { border-bottom: 0; }
+td.d { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); }
+.pages { display: flex; flex-wrap: wrap; gap: 6px; }
+.pg { font-size: 13px; padding: 2px 9px; border-radius: 999px; background: var(--lane-alt); white-space: nowrap; }
+.pg i { font-style: normal; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-left: 4px; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+@media (max-width: 760px) {
+  .scope { grid-template-columns: minmax(0, 1fr); }
+  .bar b { font-size: 12px; }
+  .p2 span, .p3 span { display: none; }
+}
+@media (max-width: 520px) { .p3 b { display: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Lộ trình phối hợp DGM × GTV đến ngày launch 15/12</h1>
+
+    <div class="bar" role="img" aria-label="Tỷ lệ thời gian: thiết kế Figma 35 ngày, dựng web demo 10 ngày, điều chỉnh technical 5 ngày">
+      <div class="p1"><b>GĐ 1 · Thiết kế Figma + duyệt content</b><span>27/10 – 30/11</span></div>
+      <div class="p2"><b>GĐ 2 · Web demo</b><span>01/12 – 10/12</span></div>
+      <div class="p3"><b>GĐ 3 · Điều chỉnh technical</b><span>11–15/12</span></div>
+    </div>
+    <div class="ticks"><span>27/10</span><span class="mid1">30/11</span><span>15/12</span></div>
+    <div class="launch"><div class="launch-pill"><span class="launch-dia" aria-hidden="true"></span><span><span class="launch-date">15/12/2026</span> Dự kiến launch website bản tiếng Việt</span></div></div>
+  </header>
+
+  <section>
+    <h2>Flowchart phối hợp</h2>
+    <figure>
+      <div class="scroller">
+        <svg class="flow" viewBox="0 0 1000 1290" role="img" aria-label="Flowchart ba làn DGM, GTV, Quyen Auto. Giai đoạn 1: từ wireframe và cấu trúc web GTV đã gửi, DGM thiết kế Figma từng trang, GTV review section và SEO, Quyen Auto QA, lặp đến hết trang; song song Quyen Auto duyệt content, GTV điều chỉnh theo feedback. Giai đoạn 2: DGM dựng giao diện lên web demo và thay content đã duyệt, Quyen Auto kiểm tra so với Figma. Giai đoạn 3: DGM triển khai technical theo order GTV đã gửi, GTV nghiệm thu, Quyen Auto duyệt go-live, launch 15/12.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-back" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+
+          <!-- lanes -->
+          <rect class="rail" x="0" y="0" width="124" height="1290"/>
+          <rect class="lane" x="124" y="0" width="292" height="1290"/>
+          <rect class="lane-alt" x="416" y="0" width="292" height="1290"/>
+          <rect class="lane" x="708" y="0" width="292" height="1290"/>
+          <rect class="c-dgm" x="124" y="0" width="292" height="5"/>
+          <rect class="c-gtv" x="416" y="0" width="292" height="5"/>
+          <rect class="c-qa" x="708" y="0" width="292" height="5"/>
+
+          <text class="r-gd" x="14" y="36">GIAI ĐOẠN</text>
+          <text class="hd-name c-dgm" x="270" y="32" text-anchor="middle">DGM</text>
+          <text class="hd-sub" x="270" y="50" text-anchor="middle">Thẩm mỹ giao diện · dựng web</text>
+          <text class="hd-name c-gtv" x="562" y="32" text-anchor="middle">GTV</text>
+          <text class="hd-sub" x="562" y="50" text-anchor="middle">Section trên trang · tối ưu SEO</text>
+          <text class="hd-name c-qa" x="854" y="32" text-anchor="middle">Quyen Auto</text>
+          <text class="hd-sub" x="854" y="50" text-anchor="middle">Chủ dự án · QA &amp; phê duyệt</text>
+
+          <line class="divider" x1="0" y1="66" x2="1000" y2="66"/>
+          <line class="divider soft" x1="0" y1="584" x2="1000" y2="584"/>
+          <line class="divider" x1="0" y1="776" x2="1000" y2="776"/>
+          <line class="divider" x1="0" y1="970" x2="1000" y2="970"/>
+
+          <!-- rail: phase labels & milestones -->
+          <text class="r-gd" x="14" y="94">GĐ 1</text>
+          <text class="r-name" x="14" y="113">Thiết kế Figma</text>
+          <text class="r-date" x="14" y="132">27/10 – 30/11</text>
+          <text class="r-note" x="14" y="150">cuốn chiếu</text>
+          <text class="r-note" x="14" y="165">từng trang</text>
+
+          <text class="r-gd" x="14" y="608">SONG SONG</text>
+          <text class="r-name" x="14" y="627">Duyệt content</text>
+          <text class="r-note" x="14" y="645">các trang</text>
+
+          <path class="ms" d="M20,742 l7,-7 l7,7 l-7,7 z"/>
+          <text class="r-date" x="42" y="746">30/11</text>
+          <text class="r-ms" x="14" y="765">Chốt Figma</text>
+
+          <text class="r-gd" x="14" y="804">GĐ 2</text>
+          <text class="r-name" x="14" y="823">Dựng web demo</text>
+          <text class="r-date" x="14" y="842">01/12 – 10/12</text>
+          <text class="r-note" x="14" y="860">~10 ngày</text>
+          <path class="ms" d="M20,934 l7,-7 l7,7 l-7,7 z"/>
+          <text class="r-date" x="42" y="938">10/12</text>
+          <text class="r-ms" x="14" y="957">Xong web demo</text>
+
+          <text class="r-gd" x="14" y="998">GĐ 3</text>
+          <text class="r-name" x="14" y="1017">Điều chỉnh</text>
+          <text class="r-name" x="14" y="1034">technical</text>
+          <text class="r-date" x="14" y="1053">11/12 – 15/12</text>
+          <text class="r-note" x="14" y="1071">~5 ngày</text>
+          <path class="ms" d="M20,1242 l7,-7 l7,7 l-7,7 z"/>
+          <text class="r-date" x="42" y="1246">15/12</text>
+          <text class="r-ms" x="14" y="1266">Launch</text>
+
+          <!-- ===== GĐ 1 · thiết kế ===== -->
+          <path class="edge" d="M454,112 H270 V168" marker-end="url(#ah)"/>
+          <text class="lbl" x="362" y="104">Wireframe</text>
+
+          <path class="edge" d="M270,226 V310 H460" marker-end="url(#ah)"/>
+          <text class="lbl" x="366" y="302">Chờ feedback</text>
+
+          <path class="edge back" d="M562,266 V198 H377" marker-end="url(#ahb)"/>
+          <text class="lbl back" x="470" y="190">Cần điều chỉnh</text>
+
+          <path class="edge" d="M662,310 H760" marker-end="url(#ah)"/>
+          <text class="lbl" x="711" y="302">Đạt</text>
+
+          <path class="edge back" d="M854,266 V150 H330 V168" marker-end="url(#ahb)"/>
+          <text class="lbl back" x="760" y="143">Cần điều chỉnh</text>
+
+          <path class="edge" d="M854,354 V388" marker-end="url(#ah)"/>
+          <path class="edge" d="M854,440 V468" marker-end="url(#ah)"/>
+
+          <path class="edge" d="M766,508 H150 V198 H163" marker-end="url(#ah)"/>
+          <text class="lbl" x="460" y="500">Trang kế tiếp</text>
+          <text class="lbl" x="738" y="500">Chưa</text>
+
+          <path class="edge" d="M854,546 V562 H270 V828" marker-end="url(#ah)"/>
+          <text class="lbl" x="874" y="560">Đủ</text>
+          <text class="lbl" x="560" y="556">Figma đã chốt</text>
+
+          <ellipse class="c-gtv" cx="562" cy="112" rx="108" ry="22"/>
+          <text class="t-node" x="562" y="109">Wireframe &amp; cấu trúc web</text>
+          <text class="t-node2" x="562" y="124">GTV đã gửi</text>
+
+          <rect class="c-dgm" x="165" y="170" width="210" height="56" rx="4"/>
+          <text class="t-node" x="270" y="194">Thiết kế trang trên Figma</text>
+          <text class="t-node2" x="270" y="211">theo timeline từng trang</text>
+
+          <path class="dia s-gtv" d="M562,266 L662,310 L562,354 L462,310 z"/>
+          <text class="t-dia" x="562" y="307">Review section</text>
+          <text class="t-dia2" x="562" y="323">&amp; yếu tố SEO</text>
+
+          <path class="dia s-qa" d="M854,266 L946,310 L854,354 L762,310 z"/>
+          <text class="t-dia" x="854" y="307">QA review</text>
+          <text class="t-dia2" x="854" y="323">thẩm mỹ, thương hiệu</text>
+
+          <rect class="c-qa" x="749" y="390" width="210" height="50" rx="4"/>
+          <text class="t-node" x="854" y="411">Trang hoàn thành</text>
+          <text class="t-node2" x="854" y="427">cập nhật status trên sheet</text>
+
+          <path class="dia s-qa" d="M854,470 L942,508 L854,546 L766,508 z"/>
+          <text class="t-dia" x="854" y="505">Đủ tất cả</text>
+          <text class="t-dia2" x="854" y="520">trang / hạng mục?</text>
+
+          <!-- ===== GĐ 1 · song song duyệt content ===== -->
+          <path class="edge" d="M667,630 H760" marker-end="url(#ah)"/>
+          <text class="lbl" x="713" y="622">Gửi duyệt</text>
+
+          <path class="edge back" d="M854,668 V715 H669" marker-end="url(#ahb)"/>
+          <text class="lbl back" x="760" y="707">Có feedback</text>
+
+          <path class="edge back" d="M562,690 V660" marker-end="url(#ahb)"/>
+
+          <path class="edge" d="M946,630 H980 V796 H330 V828" marker-end="url(#ah)"/>
+          <text class="lbl" x="963" y="622">Đạt</text>
+          <text class="lbl" x="600" y="790">Content đã duyệt</text>
+
+          <rect class="c-gtv" x="457" y="602" width="210" height="56" rx="4"/>
+          <text class="t-node" x="562" y="626">Content các trang</text>
+          <text class="t-node2" x="562" y="643">GTV phụ trách</text>
+
+          <path class="dia s-qa" d="M854,592 L946,630 L854,668 L762,630 z"/>
+          <text class="t-dia" x="854" y="627">Duyệt content</text>
+          <text class="t-dia2" x="854" y="642">từng trang</text>
+
+          <rect class="c-gtv" x="457" y="690" width="210" height="50" rx="4"/>
+          <text class="t-node" x="562" y="711">Điều chỉnh content</text>
+          <text class="t-node2" x="562" y="727">theo feedback</text>
+
+          <!-- ===== GĐ 2 ===== -->
+          <path class="edge" d="M375,858 H760" marker-end="url(#ah)"/>
+          <text class="lbl" x="568" y="850">Bàn giao web demo</text>
+
+          <path class="edge back" d="M854,896 V930 H320 V888" marker-end="url(#ahb)"/>
+          <text class="lbl back" x="587" y="923">Lệch so với Figma</text>
+
+          <path class="edge" d="M946,858 H980 V992 H270 V1008" marker-end="url(#ah)"/>
+          <text class="lbl" x="964" y="850">Khớp</text>
+
+          <rect class="c-dgm" x="165" y="830" width="210" height="56" rx="4"/>
+          <text class="t-node" x="270" y="854">Dựng giao diện web demo</text>
+          <text class="t-node2" x="270" y="871">+ thay content đã duyệt</text>
+
+          <path class="dia s-qa" d="M854,820 L946,858 L854,896 L762,858 z"/>
+          <text class="t-dia" x="854" y="855">Kiểm tra web</text>
+          <text class="t-dia2" x="854" y="870">so với Figma</text>
+
+          <!-- ===== GĐ 3 ===== -->
+          <path class="edge" d="M457,1038 H377" marker-end="url(#ah)"/>
+          <text class="lbl" x="417" y="1030">Order</text>
+
+          <path class="edge" d="M270,1066 V1150 H460" marker-end="url(#ah)"/>
+          <text class="lbl" x="366" y="1142">Bàn giao</text>
+
+          <path class="edge back" d="M562,1194 V1220 H210 V1068" marker-end="url(#ahb)"/>
+          <text class="lbl back" x="386" y="1213">Lỗi technical</text>
+
+          <path class="edge" d="M662,1150 H747" marker-end="url(#ah)"/>
+          <text class="lbl" x="705" y="1142">Đạt</text>
+
+          <path class="edge" d="M854,1178 V1220" marker-end="url(#ah)"/>
+
+          <rect class="c-dgm" x="165" y="1010" width="210" height="56" rx="4"/>
+          <text class="t-node" x="270" y="1034">Chuẩn hoá cấu trúc</text>
+          <text class="t-node2" x="270" y="1051">+ triển khai technical</text>
+
+          <rect class="c-gtv" x="457" y="1010" width="210" height="56" rx="4"/>
+          <text class="t-node" x="562" y="1043">Order technical SEO</text>
+
+          <path class="dia s-gtv" d="M562,1106 L662,1150 L562,1194 L462,1150 z"/>
+          <text class="t-dia" x="562" y="1147">Nghiệm thu</text>
+          <text class="t-dia2" x="562" y="1163">technical SEO</text>
+
+          <rect class="c-qa" x="749" y="1122" width="210" height="56" rx="4"/>
+          <text class="t-node" x="854" y="1146">Duyệt go-live</text>
+          <text class="t-node2" x="854" y="1163">kiểm tra tổng thể lần cuối</text>
+
+          <ellipse class="c-qa" cx="854" cy="1246" rx="104" ry="24"/>
+          <text class="t-node" x="854" y="1243">Launch website</text>
+          <text class="t-node2" x="854" y="1259">bản tiếng Việt · 15/12</text>
+        </svg>
+      </div>
+      <figcaption>
+        <span class="key"><span class="sw"></span>Luồng chính</span>
+        <span class="key"><span class="sw back"></span>Trả về để chỉnh sửa</span>
+        <span class="key"><span class="chip" style="background:var(--dgm)"></span>DGM</span>
+        <span class="key"><span class="chip" style="background:var(--gtv)"></span>GTV</span>
+        <span class="key"><span class="chip" style="background:var(--qa)"></span>Quyen Auto</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Scope of work</h2>
+    <div class="scope">
+      <div class="card" style="--c: var(--dgm)">
+        <h3>DGM</h3>
+        <p class="role">Thẩm mỹ giao diện và triển khai website</p>
+        <ul>
+          <li>Thiết kế từng trang trên Figma theo wireframe và timeline cuốn chiếu <span class="when">27/10 – 30/11</span></li>
+          <li>Chỉnh sửa theo feedback của GTV và Quyen Auto đến khi trang được duyệt</li>
+          <li>Dựng giao diện lên web demo, thay content đã duyệt vào luôn <span class="when">01/12 – 10/12</span></li>
+          <li>Chuẩn hoá cấu trúc website, triển khai 6 hạng mục technical theo order của GTV <span class="when">11/12 – 15/12</span></li>
+          <li>Xử lý lỗi technical GTV báo trong lúc nghiệm thu</li>
+        </ul>
+      </div>
+      <div class="card" style="--c: var(--gtv)">
+        <h3>GTV</h3>
+        <p class="role">Section trên trang và tối ưu SEO</p>
+        <ul>
+          <li>Wireframe và cấu trúc website cho DGM <span class="done">Đã gửi</span></li>
+          <li>Order 6 hạng mục technical cho DGM <span class="done">Đã gửi</span></li>
+          <li>Review từng trang Figma về section và yếu tố SEO, ghi chú vào cột GTV note</li>
+          <li>Điều chỉnh content các trang theo feedback của Quyen Auto (nếu có)</li>
+          <li>Nghiệm thu technical SEO trước khi launch</li>
+        </ul>
+      </div>
+      <div class="card" style="--c: var(--qa)">
+        <h3>Quyen Auto</h3>
+        <p class="role">Chủ dự án, QA và phê duyệt</p>
+        <ul>
+          <li>QA review từng trang Figma sau khi GTV duyệt, ghi chú vào cột QA note</li>
+          <li>Duyệt content các trang, gửi feedback cho GTV <span class="when">trước 30/11</span></li>
+          <li>Kiểm tra giao diện trên web demo so với Figma</li>
+          <li>Duyệt go-live và launch bản tiếng Việt <span class="when">15/12</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lịch hoàn thiện Figma theo tuần</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Tuần</th><th>Trang DGM hoàn thiện trên Figma (ngày)</th></tr></thead>
+        <tbody>
+          <tr><td class="d">26/10 – 01/11</td><td><div class="pages"><span class="pg">Trang chủ<i>27/10</i></span><span class="pg">Liên hệ<i>28/10</i></span><span class="pg">Giới thiệu<i>30/10</i></span></div></td></tr>
+          <tr><td class="d">02/11 – 08/11</td><td><div class="pages"><span class="pg">Đóng thùng xe tải<i>03/11</i></span><span class="pg">Thùng đông lạnh xe tải<i>05/11</i></span><span class="pg">Thùng kín xe tải<i>06/11</i></span></div></td></tr>
+          <tr><td class="d">09/11 – 15/11</td><td><div class="pages"><span class="pg">Thùng bảo ôn xe tải<i>09/11</i></span><span class="pg">Xe tải Isuzu<i>11/11</i></span><span class="pg">Xe tải Hino<i>12/11</i></span></div></td></tr>
+          <tr><td class="d">16/11 – 22/11</td><td><div class="pages"><span class="pg">Product<i>16/11</i></span><span class="pg">Linh kiện Phụ kiện<i>17/11</i></span><span class="pg">Kiến thức<i>18/11</i></span><span class="pg">Blog chi tiết<i>19/11</i></span><span class="pg">Tin tức<i>19/11</i></span><span class="pg">Quy trình đặt thùng<i>20/11</i></span></div></td></tr>
+          <tr><td class="d">23/11 – 30/11</td><td><div class="pages"><span class="pg">Bảo hành - Bảo dưỡng<i>23/11</i></span><span class="pg">Cơ hội hợp tác<i>23/11</i></span><span class="pg">Khách hàng tiêu biểu<i>24/11</i></span><span class="pg">Chính sách bảo hành<i>25/11</i></span><span class="pg">Chính sách hậu mãi<i>25/11</i></span><span class="pg">Sự kiện<i>26/11</i></span><span class="pg">Hoạt động doanh nghiệp<i>26/11</i></span><span class="pg">Chính sách thanh toán<i>26/11</i></span><span class="pg">Tuyển dụng<i>27/11</i></span><span class="pg">Quy trình bàn giao &amp; nghiệm thu<i>27/11</i></span><span class="pg">Hoạt động cộng đồng<i>30/11</i></span><span class="pg">6 trang thùng chuyên dụng<i>30/11</i></span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Trích từ sheet timeline, dòng 1 đến 29. Các hạng mục sau dòng 29 cần bổ sung theo sheet gốc.</p>
+  </section>
+</div>
+
+</body></html>
